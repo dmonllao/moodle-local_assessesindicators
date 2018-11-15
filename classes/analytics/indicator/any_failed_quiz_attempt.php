@@ -77,7 +77,6 @@ class any_failed_quiz_attempt extends \core_analytics\local\indicator\binary {
         $user = $this->retrieve('user', $sampleid);
         $course = $this->retrieve('course', $sampleid);
         $modinfo = get_fast_modinfo($course);
-
         $failedquiz = false;
         $anyattempt = false;
         $quizzes = $modinfo->get_instances_of('quiz');
@@ -102,12 +101,18 @@ class any_failed_quiz_attempt extends \core_analytics\local\indicator\binary {
                 'userid' => $user->id,
             ];
             $select = 'itemid = :itemid AND userid = :userid';
+            if ($starttime) {
+                $params['starttime'] = $starttime;
+                $select .= ' AND timemodified >= :starttime';
+            }
             if ($endtime) {
                 $params['endtime'] = $endtime;
                 $select .= ' AND timemodified <= :endtime';
             }
             $gghs = $DB->get_records_select('grade_grades_history', $select, $params);
             foreach ($gghs as $ggh) {
+                $ggh->rawgrademin = floatval($ggh->rawgrademin);
+                $ggh->rawgrademax = floatval($ggh->rawgrademax);
                 $ggh->finalgrade = floatval($ggh->finalgrade);
                 if (!$ggh->finalgrade) {
                     // Discards 0.000 and nulls.
@@ -125,7 +130,7 @@ class any_failed_quiz_attempt extends \core_analytics\local\indicator\binary {
                 }
                 if ($ggh->finalgrade < $gradepass) {
                     $failedquiz = true;
-                    break;
+                    break 2;
                 }
             }
         }
@@ -135,7 +140,7 @@ class any_failed_quiz_attempt extends \core_analytics\local\indicator\binary {
             return null;
         }
 
-        if ($failedquiz) {
+        if ($failedquiz === true) {
             return self::get_max_value();
         }
         return self::get_min_value();

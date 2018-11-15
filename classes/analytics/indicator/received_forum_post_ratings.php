@@ -101,6 +101,10 @@ class received_forum_post_ratings extends \core_analytics\local\indicator\binary
                 'userid' => $user->id,
             ];
             $select = 'itemid = :itemid AND userid = :userid';
+            if ($starttime) {
+                $params['starttime'] = $starttime;
+                $select .= ' AND timemodified >= :starttime';
+            }
             if ($endtime) {
                 $params['endtime'] = $endtime;
                 $select .= ' AND timemodified <= :endtime';

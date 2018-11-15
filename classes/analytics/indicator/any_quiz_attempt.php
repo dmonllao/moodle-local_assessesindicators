@@ -31,7 +31,7 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright 2016 David Monllao {@link http://www.davidmonllao.com}
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class received_database_entry_ratings extends \core_analytics\local\indicator\binary {
+class any_quiz_attempt extends \core_analytics\local\indicator\binary {
 
     /**
      * @var \grade_item
@@ -46,7 +46,7 @@ class received_database_entry_ratings extends \core_analytics\local\indicator\bi
      * @return \lang_string
      */
     public static function get_name() : \lang_string {
-        return new \lang_string('receiveddatabaseratings', 'local_assessesindicators');
+        return new \lang_string('anyquizattempt', 'local_assessesindicators');
     }
 
     /**
@@ -77,21 +77,19 @@ class received_database_entry_ratings extends \core_analytics\local\indicator\bi
         $user = $this->retrieve('user', $sampleid);
         $course = $this->retrieve('course', $sampleid);
         $modinfo = get_fast_modinfo($course);
-
-        $ratingfound = false;
-        $databases = $modinfo->get_instances_of('data');
-        foreach($databases as $database) {
-            if ($database->sectionnum == 0) {
-                // Skip top section database activities.
+        $quizzes = $modinfo->get_instances_of('quiz');
+        foreach($quizzes as $quiz) {
+            if ($quiz->sectionnum == 0) {
+                // Skip top section quiz activities.
                 continue;
             }
 
-            $key = $course->id . '-' . $database->instance;
+            $key = $course->id . '-' . $quiz->instance;
             if (empty(self::$gis[$key])) {
                 self::$gis[$key] = new \grade_item([
                     'courseid' => $course->id,
-                    'iteminstance' => $database->instance,
-                    'itemmodule' => 'data'
+                    'iteminstance' => $quiz->instance,
+                    'itemmodule' => 'quiz'
                 ]);
             }
 
@@ -109,14 +107,17 @@ class received_database_entry_ratings extends \core_analytics\local\indicator\bi
                 $params['endtime'] = $endtime;
                 $select .= ' AND timemodified <= :endtime';
             }
-            if ($DB->record_exists_select('grade_grades_history', $select, $params)) {
-                $ratingfound = true;
-                break;
+            $gghs = $DB->get_records_select('grade_grades_history', $select, $params);
+            foreach ($gghs as $ggh) {
+                $ggh->rawgrademin = floatval($ggh->rawgrademin);
+                $ggh->rawgrademax = floatval($ggh->rawgrademax);
+                $ggh->finalgrade = floatval($ggh->finalgrade);
+                if (!$ggh->finalgrade) {
+                    // Discards 0.000 and nulls.
+                    continue;
+                }
+                return self::get_max_value();
             }
-        }
-
-        if ($ratingfound) {
-            return self::get_max_value();
         }
         return self::get_min_value();
     }

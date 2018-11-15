@@ -95,6 +95,7 @@ class any_negative_workshop_peer_assessment extends \core_analytics\local\indica
                     'itemmodule' => 'workshop',
                     'itemnumber' => 0,
                 ]);
+                self::$gis[$key]->gradepass = floatval(self::$gis[$key]->gradepass);
             }
 
             // We check grade grades history because we probably have a $endtime restriction.
@@ -103,22 +104,27 @@ class any_negative_workshop_peer_assessment extends \core_analytics\local\indica
                 'userid' => $user->id,
             ];
             $select = 'itemid = :itemid AND userid = :userid';
+            if ($starttime) {
+                $params['starttime'] = $starttime;
+                $select .= ' AND timemodified >= :starttime';
+            }
             if ($endtime) {
                 $params['endtime'] = $endtime;
                 $select .= ' AND timemodified <= :endtime';
             }
             $gghs = $DB->get_records_select('grade_grades_history', $select, $params);
             foreach ($gghs as $ggh) {
+                $ggh->rawgrademin = floatval($ggh->rawgrademin);
+                $ggh->rawgrademax = floatval($ggh->rawgrademax);
                 $ggh->finalgrade = floatval($ggh->finalgrade);
-                if (!$ggh->finalgrade) {
-                    // Discards 0.000 and nulls.
+                if (!$ggh->finalgrade || $ggh->finalgrade == 0) {
                     continue;
                 }
                 if (empty($anyattempt)) {
                     $anyattempt = true;
                 }
 
-                if (floatval(self::$gis[$key]->gradepass) > 0) {
+                if (self::$gis[$key]->gradepass > 0) {
                     $gradepass = self::$gis[$key]->gradepass;
                 } else {
                     // (Max - min mean) + min.
@@ -126,7 +132,7 @@ class any_negative_workshop_peer_assessment extends \core_analytics\local\indica
                 }
                 if ($ggh->finalgrade < $gradepass) {
                     $negativeassessment = true;
-                    break;
+                    break 2;
                 }
             }
         }

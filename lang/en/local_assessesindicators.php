@@ -25,6 +25,8 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['anyfailedquiz'] = 'Any failed quiz';
 $string['anyfailedquiz_help'] = 'Any failed quiz';
+$string['anyquizattempt'] = 'Any quiz attempt';
+$string['anyquizattempt_help'] = 'Any quiz attempt';
 $string['anynegativepeerassessment'] = 'Any negative peer assessment';
 $string['anynegativepeerassessment_help'] = 'Any negative peer assessment';
 $string['quizavggrade'] = 'Quiz average grade';
@@ -33,4 +35,4 @@ $string['receiveddatabaseratings'] = 'Database entries created by the user recei
 $string['receiveddatabaseratings_help'] = 'Database entries created by the user received other peers ratings';
 $string['receivedforumratings'] = 'Forum posts created by the user received other peers rates';
 $string['receivedforumratings_help'] = 'Forum posts created by the user received other peers ratings';
-$string['pluginname'] = 'Previous assessment indicators';
+$string['pluginname'] = 'Assessment-related indicators';
